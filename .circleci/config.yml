@@ -92,9 +92,6 @@ jobs:
     steps:
       # Checkout code from git
       - checkout
-      # Restore from cache
-      - restore_cache:
-          keys: [frontend-build]
       # Your job code here
       -  run:
           name: Run Front-End Unit Test
@@ -111,9 +108,6 @@ jobs:
     steps:
       # Checkout code from git
       - checkout
-      # Restore from cache
-      - restore_cache:
-          keys: [backend-build]
       # Your job code here
       - run:
           name: Run Back-End Unit Test
