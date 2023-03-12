@@ -63,7 +63,6 @@ jobs:
             cd frontend
             npm install
             npm run build
-            exit 1
       
 
   build-backend:
@@ -82,7 +81,6 @@ jobs:
             cd backend
             npm install
             npm run build
-            exit 1
       
 
   test-frontend:
