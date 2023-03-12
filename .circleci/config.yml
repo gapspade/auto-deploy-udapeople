@@ -132,11 +132,11 @@ jobs:
           keys: [frontend-build]
       # Your job code here
       - run: 
-          name: Scan front-end
+          name: Scan frontend dependencies
           command: |
             cd frontend
             npm install
-            npm audit fix --audit-level=critical
+            npm audit --audit-level=critical
 
   scan-backend:
     docker:
@@ -150,11 +150,11 @@ jobs:
           keys: [backend-build]
       # Your job code here
       - run: 
-          name: Scan back-end
+          name: Scan backend dependencies
           command: |
             cd backend
             npm install
-            npm audit fix --audit-level=critical
+            npm audit --audit-level=critical
 
             
 
