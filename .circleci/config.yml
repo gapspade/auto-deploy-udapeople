@@ -1,31 +1,31 @@
 version: 2.1
 
-# commands:
-#   install_awscli:
-#     description: Install AWS CLI v2
-#     steps:
-#       - run:
-#           name: Install AWS CLI v2
-#           command: |
-#             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-#             unzip awscliv2.zip
-#             sudo ./aws/install
+commands:
+  install_awscli:
+    description: Install AWS CLI v2
+    steps:
+      - run:
+          name: Install AWS CLI v2
+          command: |
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
 
-#   destroy-environment:
-#     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
-#     parameters:
-#       workflow_id:
-#         type: string
-#         default: ${CIRCLE_WORKFLOW_ID:0:7}   
-#     steps:
-#       - run:
-#           name: Tear down environment with this ID ${CIRCLE_WORKFLOW_ID:0:7} 
-#           when: on_fail
-#           command: |
-#             echo "Tearing down environment: << parameters.workflow_id >> "
-#             aws s3 rm s3://udapeople-<< parameters.workflow_id >> --recursive
-#             aws cloudformation delete-stack --stack-name udapeople-backend-<< parameters.workflow_id >> 
-#             aws cloudformation delete-stack --stack-name udapeople-frontend-<< parameters.workflow_id >>
+  destroy-environment:
+    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+    parameters:
+      workflow_id:
+        type: string
+        default: ${CIRCLE_WORKFLOW_ID:0:7}   
+    steps:
+      - run:
+          name: Tear down environment with this ID ${CIRCLE_WORKFLOW_ID:0:7} 
+          when: on_fail
+          command: |
+            echo "Tearing down environment: << parameters.workflow_id >> "
+            aws s3 rm s3://udapeople-<< parameters.workflow_id >> --recursive
+            aws cloudformation delete-stack --stack-name udapeople-backend-<< parameters.workflow_id >> 
+            aws cloudformation delete-stack --stack-name udapeople-frontend-<< parameters.workflow_id >>
 
 #   revert-migrations:
 #     description: Revert the last migration if successfully run in the current workflow.
@@ -323,9 +323,7 @@ jobs:
 #             then
 #               # your code here
 #             fi
-      
-
-            
+              
 
 workflows:
   default:
