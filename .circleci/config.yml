@@ -391,7 +391,7 @@ jobs:
             then
               exit 1
             else 
-              exit 1
+              exit 0
             fi 
       # Here's where you will add some code to rollback on failure 
       - destroy-environment
@@ -426,24 +426,24 @@ jobs:
       - destroy-environment
       - revert-migrations 
 
-# cleanup:
-#     docker:
-#       # Docker image here
-#     steps:
-#       # Checkout code from git
-#       - run:
-#           name: Get old stack workflow id
-#           command: |
-#             # your code here
-#             export OldWorkflowID="the id here"
-#             export STACKS=[] #put the list of stacks here
-#       - run:
-#           name: Remove old stacks and files
-#           command: |
-#             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
-#             then
-#               # your code here
-#             fi
+  # cleanup:
+  #   docker:
+  #     # Docker image here
+  #   steps:
+  #     # Checkout code from git
+  #     - run:
+  #         name: Get old stack workflow id
+  #         command: |
+  #           # your code here
+  #           export OldWorkflowID="the id here"
+  #           export STACKS=[] #put the list of stacks here
+  #     - run:
+  #         name: Remove old stacks and files
+  #         command: |
+  #           if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+  #           then
+  #             # your code here
+  #           fi
               
 
 workflows:
