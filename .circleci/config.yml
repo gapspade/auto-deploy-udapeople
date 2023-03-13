@@ -277,8 +277,14 @@ jobs:
       # Checkout code from git
       - checkout
       - install_awscli
-      - install_ansible
-      - install_nodejs
+      - run:
+          name: Install dependencies
+          command: |
+            sudo apt update && sudo apt upgrade
+            sudo apt-get install python python-pip tar gzip
+            python -m pip install --user ansible
+            cd frontend 
+            npm install
       - run:
           name: Get backend URL
           command: |
@@ -292,15 +298,12 @@ jobs:
             echo "API_URL = ${API_URL}"
             echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
             cat frontend/.env
-
       - run:
           name: Deploy frontend objects
           command: |
             cd frontend
-            sudo npm install -g npm
-            rm -rf node_modules
-            npm install
             npm run build
+            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       - destroy-environment
       - revert-migrations     
