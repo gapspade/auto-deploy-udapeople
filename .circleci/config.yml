@@ -65,7 +65,8 @@ commands:
               npm install
               npm run migration:revert
             fi
-            
+
+           
 jobs:
   build-frontend:
     docker:
@@ -119,8 +120,7 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-test 
-
-                
+           
   test-backend:
     docker:
       # Docker image here
@@ -405,7 +405,7 @@ jobs:
       # Checkout code from git
       - checkout
       - run:
-          name: Install dependencies / Save old workflow ID to kvdb.io
+          name: Save old workflow ID to kvdb.io
           command: |
             # your code here
             export OLD_WORKFLOW_ID=$(aws cloudformation \
@@ -426,24 +426,36 @@ jobs:
       - destroy-environment
       - revert-migrations 
 
-  # cleanup:
-  #   docker:
-  #     # Docker image here
-  #   steps:
-  #     # Checkout code from git
-  #     - run:
-  #         name: Get old stack workflow id
-  #         command: |
-  #           # your code here
-  #           export OldWorkflowID="the id here"
-  #           export STACKS=[] #put the list of stacks here
-  #     - run:
-  #         name: Remove old stacks and files
-  #         command: |
-  #           if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
-  #           then
-  #             # your code here
-  #           fi
+  cleanup:
+    docker:
+      # Docker image here
+      - image: cimg/base:stable
+    steps:
+      # Checkout code from git
+      - checkout
+      - install_awscli
+      - install_ansible
+      - run:
+          name: Get old stack workflow id
+          command: |
+            # your code here
+            export OldWorkflowID="the id here"
+            export STACKS=[] #put the list of stacks here
+      - run:
+          name: Remove old stacks and files
+          command: |
+            export STACKS=($(aws cloudformation list-stacks \
+                --query "StackSummaries[*].StackName" \
+                --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
+            echo Stack names: "${STACKS[@]}"
+            export OldWorkflowID=$(curl --insecure https://kvdb.io/${KVDB_BUCKET}/old_workflow_id)
+            echo Old Workflow ID: $OldWorkflowID
+            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+            then
+              aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
+              aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
+              aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
+            fi
               
 
 workflows:
@@ -476,5 +488,5 @@ workflows:
           requires: [deploy-backend, deploy-frontend]
       - cloudfront-update:
           requires: [smoke-test]
-      # - cleanup:
-      #     requires: [cloudfront-update]
+      - cleanup:
+          requires: [cloudfront-update]
