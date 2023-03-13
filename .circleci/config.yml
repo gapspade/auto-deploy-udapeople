@@ -1,6 +1,26 @@
 version: 2.1
 
 commands:
+  install_nodejs:
+    description: Install nodejs
+    steps:
+      - run: 
+          name: Install Node.js 13
+          command: |
+            curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
+            sudo apt install -y nodejs
+
+  install_ansible:
+    description: Install Ansible
+    steps:
+      - run:
+          name: Install ansible
+          command: |
+            sudo apt update
+            sudo apt install software-properties-common -y
+            sudo add-apt-repository --yes --update ppa:ansible/ansible
+            sudo apt install ansible -y
+
   install_awscli:
     description: Install AWS CLI v2
     steps:
@@ -252,19 +272,13 @@ jobs:
   deploy-frontend:
     docker:
       # Docker image here that supports AWS CLI
-      - image: amazon/aws-cli
+      - image: cimg/base:stab
     steps:
       # Checkout code from git
       - checkout
-      - run:
-          name: Install dependencies - Python, Ansible
-          command: |
-            # your code here
-            sudo apt update && sudo apt upgrade
-            sudo apt-get install python python-pip tar gzip
-            python -m pip install --user ansible
-            cd frontend 
-            npm install
+      - install_awscli
+      - install_ansible
+      - install_nodejs
       - run:
           name: Get backend URL
           command: |
@@ -283,6 +297,8 @@ jobs:
           name: Deploy frontend objects
           command: |
             cd frontend
+            sudo npm install -g npm@latest
+            rm -rf node_modules
             npm install
             npm run build
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
@@ -292,7 +308,7 @@ jobs:
                     
   deploy-backend:
     docker:
-      - image: python:3.8-alpine3.15
+      - image: cimg/base:stable
     steps:
       # Checkout code from git
       - checkout
@@ -302,12 +318,9 @@ jobs:
       # attach workspace
       - attach_workspace:
           at: ~/
-      - run:
-          name: Install dependencies - Ansible, Nodejs
-          command: |
-            # your code here
-            apk add --update ansible
-            apk add --update tar gzip nodejs
+      - install_awscli
+      - install_ansible
+      - install_nodejs
       - run:
           name: Deploy backend
           command: |
