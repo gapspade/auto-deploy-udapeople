@@ -272,7 +272,7 @@ jobs:
   deploy-frontend:
     docker:
       # Docker image here that supports AWS CLI
-      - image: cimg/base:stab
+      - image: cimg/base:stable
     steps:
       # Checkout code from git
       - checkout
