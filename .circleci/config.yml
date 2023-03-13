@@ -39,7 +39,7 @@ commands:
         default: ${CIRCLE_WORKFLOW_ID:0:7}   
     steps:
       - run:
-          name: Tear down environment with this ID ${CIRCLE_WORKFLOW_ID:0:7} 
+          name: Roll-back environment with this ID ${CIRCLE_WORKFLOW_ID:0:7} 
           when: on_fail
           command: |
             echo "Tearing down environment: << parameters.workflow_id >> "
@@ -345,9 +345,13 @@ jobs:
 
   smoke-test:
     docker:
-      # Lightweight Docker image 
+      # Lightweight Docker image
+      - image: cimg/base:stable
     steps:
       # Checkout code from git
+      - checkout
+      - install_awscli
+      - install_nodejs
       - run:
           name: Install dependencies
           command: |
@@ -360,26 +364,64 @@ jobs:
           name: Backend smoke test.
           command: |
             # your code here
+            export BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text)
+            export API_URL="http://${BACKEND_PUBLIC_IP}:3030"
+            echo ${BACKEND_PUBLIC_IP}
+            echo backend-${CIRCLE_WORKFLOW_ID:0:7}
+            echo "${API_URL}"
+            if curl -s $API_URL/api/status | grep "ok"
+            then
+              exit 0
+            else
+              exit 1
+            fi
       - run:
           name: Frontend smoke test.
           command: |
             # your code here
-      # Here's where you will add some code to rollback on failure  
+            FRONTEND_WEBSITE="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.${AWS_DEFAULT_REGION}.amazonaws.com            
+            echo ${FRONTEND_WEBSITE} 
+            if curl -s ${FRONTEND_WEBSITE} | grep "Welcome"
+            then
+              exit 0
+            else 
+              exit 1
+            fi 
+      # Here's where you will add some code to rollback on failure 
+      - destroy-environment
+      - revert-migrations 
 
-#   cloudfront-update:
-#     docker:
-#       # Docker image here that supports AWS CLI
-#     steps:
-#       # Checkout code from git
-#       - run:
-#           name: Install dependencies
-#           command: |
-#             # your code here
-#       - run:
-#           name: Update cloudfront distribution
-#           command: |
-#             # your code here
-#       # Here's where you will add some code to rollback on failure  
+  cloudfront-update:
+    docker:
+      # Docker image here that supports AWS CLI
+      - image: amazon/aws-cli
+    steps:
+      # Checkout code from git
+      - checkout
+      - run:
+          name: Install dependencies / Save old workflow ID to kvdb.io
+          command: |
+            # your code here
+            export OLD_WORKFLOW_ID=$(aws cloudformation \
+            list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+            --no-paginate --output text)
+            echo "Old Workflow ID: $OLD_WORKFLOW_ID"
+            curl https://kvdb.io/CNs4fN3T6hwkATyHz5Q1sb/old_workflow_id -d "${OLD_WORKFLOW_ID}"
+      - run:
+          name: Update cloudfront distribution
+          command: |
+            # your code here
+            aws cloudformation deploy \
+            --template-file .circleci/files/cloudfront.yml \
+            --stack-name InitialStack \
+            --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --tags project=udapeople
+      # Here's where you will add some code to rollback on failure 
+      - destroy-environment
+      - revert-migrations 
 
 # cleanup:
 #     docker:
@@ -427,9 +469,9 @@ workflows:
           requires: [run-migrations]
       - deploy-backend:
           requires: [run-migrations]
-      # - smoke-test:
-      #     requires: [deploy-backend, deploy-frontend]
-      # - cloudfront-update:
-      #     requires: [smoke-test]
+      - smoke-test:
+          requires: [deploy-backend, deploy-frontend]
+      - cloudfront-update:
+          requires: [smoke-test]
       # - cleanup:
       #     requires: [cloudfront-update]
