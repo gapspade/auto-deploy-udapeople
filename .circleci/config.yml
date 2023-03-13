@@ -436,19 +436,29 @@ jobs:
       - install_awscli
       - install_ansible
       - run:
-          name: Remove old stacks and files
+          name: Get old stack Workflow ID
           command: |
             export STACKS=($(aws cloudformation list-stacks \
                 --query "StackSummaries[*].StackName" \
                 --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
             echo Stack names: "${STACKS[@]}"
-            export OldWorkflowID=$(curl --insecure https://kvdb.io/${KVDB_BUCKET}/old_workflow_id)
+
+            export OldWorkflowID=$(curl --insecure https://kvdb.io/CNs4fN3T6hwkATyHz5Q1sb/old_workflow_id)
             echo Old Workflow ID: $OldWorkflowID
+      - run:      
+          name: Remove old stacks and files
+          command: |
+            export OldWorkflowID=$(curl --insecure https://kvdb.io/CNs4fN3T6hwkATyHz5Q1sb/old_workflow_id)
+            echo Old Workflow ID: $OldWorkflowID
+
             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
             then
               aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
               aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
               aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
+              echo "<-------------------- Delete Confirmed -------------------->"
+            else
+              echo "<-------------------- Error Cleanup -------------------->"
             fi
               
 
