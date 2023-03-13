@@ -5,10 +5,10 @@ commands:
     description: Install nodejs
     steps:
       - run: 
-          name: Install Node.js 18.x
+          name: Install Node.js 13.x
           command: |
-            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-            sudo apt install -y nodejs
+            curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
+            sudo apt install nodejs -y
 
   install_ansible:
     description: Install Ansible
@@ -301,6 +301,7 @@ jobs:
             rm -rf node_modules
             npm install
             npm run build
+            npm audit fix --audit-level=critical
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       - destroy-environment
       - revert-migrations     
