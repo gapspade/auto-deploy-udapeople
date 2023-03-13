@@ -1,5 +1,5 @@
 export TYPEORM_CONNECTION=postgres
-export TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts
+export TYPEORM_ENTITIES=./src/modules/domain/**/*.entity{.ts,.js}
 export TYPEORM_HOST=db-udapeople.cdbzrbayp5cy.us-east-1.rds.amazonaws.com
 export TYPEORM_PORT=5432
 export TYPEORM_USERNAME=postgres
