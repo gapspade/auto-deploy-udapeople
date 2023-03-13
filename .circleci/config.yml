@@ -65,7 +65,8 @@ commands:
               npm install
               npm run migration:revert
             fi
-            
+
+           
 jobs:
   build-frontend:
     docker:
@@ -119,8 +120,7 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-test 
-
-                
+           
   test-backend:
     docker:
       # Docker image here
