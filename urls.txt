@@ -1,5 +1,0 @@
-[URL01] 
-Provide a URL to your public GitHub repository ➡️ https://github.com/gapspade/auto-deploy-udapeople
-
-[URL02]
-Provide the public URL for your S3 Bucket ➡️ 
