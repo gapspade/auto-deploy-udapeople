@@ -224,11 +224,13 @@ jobs:
 
   run-migrations:
     docker:
-      - image: cimg/python:3.10
+      - image: cimg/python:3.10   #Executor
     steps:
       - checkout
-      - install_nodejs
       - install_awscli
+      - install_nodejs
+      - restore_cache:
+          keys: [backend-deps]
       - run:
           name: Run migrations
           command: |
@@ -241,12 +243,12 @@ jobs:
           command: |
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
             then
-              curl https://kvdb.io/KVDB_BUCKET/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+              curl https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             else
-              echo "No migrations are pending"
+              echo "No migrations are pending" 
             fi
-      - destroy-environment     
-      - revert-migrations
+      - destroy-environment
+      - revert-migrations 
 
   deploy-frontend:
     docker:
