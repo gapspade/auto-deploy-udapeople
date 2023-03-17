@@ -58,7 +58,7 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-            SUCCESS=$(curl --insecure https://kvdb.io/CNs4fN3T6hwkATyHz5Q1sb/migration_<< parameters.workflow_id >>)
+            SUCCESS=$(curl --insecure https://kvdb.io/KVDB_BUCKET/migration_<< parameters.workflow_id >>)
             if(( $SUCCESS==1 )); 
             then
               cd ~/project/backend
@@ -214,11 +214,6 @@ jobs:
           fingerprints: ["86:1a:61:24:4d:30:e8:25:d2:b9:4d:02:12:b1:a6:cd"]
       - attach_workspace:
           at: ~/
-      # - run:
-      #     name: Install dependencies
-      #     command: |
-      #       apk add --update --no-cache python3 py3-pip
-      #       /usr/local/bin/python -m pip install --upgrade pip
       - run:
           name: Configure server with Ansible Play
           command: |
@@ -229,10 +224,8 @@ jobs:
 
   run-migrations:
     docker:
-      # Docker image here that supports NodeJS
       - image: cimg/python:3.10
     steps:
-      # Checkout code from git
       - checkout
       - install_nodejs
       - install_awscli
@@ -248,7 +241,7 @@ jobs:
           command: |
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
             then
-              curl https://kvdb.io/CNs4fN3T6hwkATyHz5Q1sb/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+              curl https://kvdb.io/KVDB_BUCKET/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             else
               echo "No migrations are pending"
             fi
@@ -304,7 +297,7 @@ jobs:
           keys:
             - backend-deps-{{ checksum "backend/package-lock.json" }}
       - add_ssh_keys: 
-          fingerprints: ["86:1a:61:24:4d:30:e8:25:d2:b9:4d:02:12:b1:a6:cd"]
+          fingerprints: ["d6:11:37:f7:93:48:12:ca:3a:c7:f2:32:f5:9a:31:cf"]
       # attach workspace
       - attach_workspace:
           at: ~/
@@ -326,7 +319,7 @@ jobs:
           name: Deploy backend
           command: |
             export TYPEORM_MIGRATIONS_DIR=./migrations
-            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
+            export TYPEORM_ENTITIES=./modules/domain/**/*.entity.ts
             export TYPEORM_MIGRATIONS=./migrations/*.ts
             cd .circleci/ansible
             cat inventory.txt
@@ -375,28 +368,36 @@ jobs:
 
   cloudfront-update:
     docker:
-      - image: amazon/aws-cli
+      - image: cimg/base:stable
     steps:
       # Checkout code from git
       - checkout
+      - install_awscli
+      - install_nodejs
       - run:
-          name: Save old workflow ID to kvdb.io
+          name: Install dependencies
+          command: |
+            sudo apt-get update -y
+            sudo apt install -y curl
+      - run:
+          name: Save Old Workflow ID to kvdb.io
           command: |
             export OLD_WORKFLOW_ID=$(aws cloudformation \
               list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
               --no-paginate --output text)
             echo "Old Workflow ID: $OLD_WORKFLOW_ID"
-            curl https://kvdb.io/CNs4fN3T6hwkATyHz5Q1sb/old_workflow_id -d "${OLD_WORKFLOW_ID}"
+            curl https://kvdb.io/${KVDB_BUCKET}/old_workflow_id -d "${OLD_WORKFLOW_ID}"
       - run:
           name: Update cloudfront distribution
           command: |
             aws cloudformation deploy \
             --template-file .circleci/files/cloudfront.yml \
             --stack-name InitialStack \
-            --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}"
+            --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}"
             echo Current Workflow ID: "${CIRCLE_WORKFLOW_ID:0:7}"
+# rolls back; should migration fail
       - destroy-environment
-      - revert-migrations 
+      - revert-migrations
 
   cleanup:
     docker:
@@ -415,12 +416,12 @@ jobs:
               --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
             echo Stack names: "${STACKS[@]}"
 
-            export OldWorkflowID=$(curl --insecure https://kvdb.io/CNs4fN3T6hwkATyHz5Q1sb/old_workflow_id)
+            export OldWorkflowID=$(curl --insecure https://kvdb.io/KVDB_BUCKET/old_workflow_id)
             echo Old Workflow ID: $OldWorkflowID
       - run:      
           name: Remove old stacks and files
           command: |
-            export OldWorkflowID=$(curl --insecure https://kvdb.io/CNs4fN3T6hwkATyHz5Q1sb/old_workflow_id)
+            export OldWorkflowID=$(curl --insecure https://kvdb.io/KVDB_BUCKET/old_workflow_id)
             echo Old Workflow ID: $OldWorkflowID
 
             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]

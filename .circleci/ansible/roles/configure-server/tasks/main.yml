@@ -1,23 +1,41 @@
 ---
-- name: "Get NodeJS v13 from source"
-  become: true
-  shell: |
-    curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
-      
-- name: "Install NodeJS v13"
-  become: true
-  apt:
-    name: ["nodejs"]
-    update_cache: yes
 
-- name: "Install pm2 globally - process mgr for prod Node.js app"
+- name: 'Install Node.js 13'
+  shell: |
+    # Install Node.js LTS version as our base Node.js version
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+
+    # Use n version manager (NVM) to switch to Node.js v13.8.0
+    sudo npm install -g n
+    sudo n 13.8.0
+
+- name: 'Install PM2 Globally'
   npm:
     name: pm2
     global: yes
-    production: yes
 
-- name: "Move evn variables to /etc/profile.d"
-  become: true
-  copy:
-    src: myenv.sh
-    dest: /etc/profile.d
+
+
+# - name: "Get NodeJS v13 from source"
+#   become: true
+#   shell: |
+#     curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
+      
+# - name: "Install NodeJS v13"
+#   become: true
+#   apt:
+#     name: ["nodejs"]
+#     update_cache: yes
+
+# - name: "Install pm2 globally - process mgr for prod Node.js app"
+#   npm:
+#     name: pm2
+#     global: yes
+#     production: yes
+
+# - name: "Move evn variables to /etc/profile.d"
+#   become: true
+#   copy:
+#     src: myenv.sh
+#     dest: /etc/profile.d
